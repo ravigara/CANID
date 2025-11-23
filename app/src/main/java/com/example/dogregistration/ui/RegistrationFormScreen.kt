@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.dogregistration.data.*
 import java.util.UUID
+import androidx.compose.runtime.saveable.rememberSaveable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,26 +26,22 @@ fun RegistrationFormScreen(
     capturedUris: List<Uri>,
     onSubmit: (DogProfile) -> Unit
 ) {
-    // State for every field in the form
-    var dogName by remember { mutableStateOf("") }
-    var breed by remember { mutableStateOf("") }
-    var gender by remember { mutableStateOf(DogGender.None) }
-    var primaryColor by remember { mutableStateOf(DogColor.NONE) }
-    var secondaryColor by remember { mutableStateOf(DogColor.NONE) }
-    var ageInMonths by remember { mutableStateOf("") }
-    var dogType by remember { mutableStateOf(DogType.PET) }
-    var ownerName by remember { mutableStateOf("") }
-    var adoptionDate by remember { mutableStateOf("") }
-    var microchipNumber by remember { mutableStateOf("") }
+    var dogName by rememberSaveable { mutableStateOf("") }
+    var breed by rememberSaveable { mutableStateOf("") }
+    var gender by rememberSaveable { mutableStateOf(DogGender.None) }
+    var primaryColor by rememberSaveable { mutableStateOf(DogColor.NONE) }
+    var secondaryColor by rememberSaveable { mutableStateOf(DogColor.NONE) }
+    var ageInMonths by rememberSaveable { mutableStateOf("") }
+    var dogType by rememberSaveable { mutableStateOf(DogType.PET) }
+    var ownerName by rememberSaveable { mutableStateOf("") }
+    var adoptionDate by rememberSaveable { mutableStateOf("") }
+    var microchipNumber by rememberSaveable { mutableStateOf("") }
 
-    // State for the dynamic list of vaccinations
     val vaccinations = remember { mutableStateListOf<VaccinationRecord>() }
-    var newVaccinationDate by remember { mutableStateOf("") }
+    var newVaccinationDate by rememberSaveable { mutableStateOf("") }
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
+        modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
@@ -52,36 +49,34 @@ fun RegistrationFormScreen(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        // --- Attached Photos ---
         if (capturedUris.isNotEmpty()) {
             item {
                 Text("Attached Photos:", style = MaterialTheme.typography.titleMedium)
-                LazyRow(
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                LazyRow(modifier = Modifier.padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(capturedUris) { uri ->
-                        AsyncImage(
-                            model = uri,
-                            contentDescription = "Captured photo",
-                            modifier = Modifier.size(80.dp)
-                        )
+                        AsyncImage(model = uri, contentDescription = "Captured photo", modifier = Modifier.size(80.dp))
                     }
                 }
                 Divider()
             }
         }
 
-        // --- Form Fields ---
         item { OutlinedTextField(value = dogName, onValueChange = { dogName = it }, label = { Text("Dog Name") }, modifier = Modifier.fillMaxWidth()) }
         item { OutlinedTextField(value = breed, onValueChange = { breed = it }, label = { Text("Breed") }, modifier = Modifier.fillMaxWidth()) }
         item { GenderDropdown(gender) { gender = it } }
         item { ColorDropdown("Primary Color", primaryColor) { primaryColor = it } }
         item { ColorDropdown("Secondary Color", secondaryColor) { secondaryColor = it } }
-        item { OutlinedTextField(value = ageInMonths, onValueChange = { ageInMonths = it.filter { c -> c.isDigit() } }, label = { Text("Age in Months") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth()) }
+        item {
+            OutlinedTextField(
+                value = ageInMonths,
+                onValueChange = { ageInMonths = it.filter { c -> c.isDigit() } },
+                label = { Text("Age in Months") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
         item { DogTypeDropdown(dogType) { dogType = it } }
 
-        // --- Conditional Fields ---
         if (dogType == DogType.PET || dogType == DogType.ADOPTED) {
             item { OutlinedTextField(value = ownerName, onValueChange = { ownerName = it }, label = { Text("Owner Name") }, modifier = Modifier.fillMaxWidth()) }
         }
@@ -89,10 +84,8 @@ fun RegistrationFormScreen(
             item { OutlinedTextField(value = adoptionDate, onValueChange = { adoptionDate = it }, label = { Text("Adoption Date (e.g., YYYY-MM-DD)") }, modifier = Modifier.fillMaxWidth()) }
         }
 
-        // --- Vaccinations Section ---
         item {
             Text("Vaccinations", style = MaterialTheme.typography.titleMedium)
-            // Display existing vaccinations
             vaccinations.forEach { record ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(record.date, modifier = Modifier.weight(1f))
@@ -101,20 +94,13 @@ fun RegistrationFormScreen(
                     }
                 }
             }
-            // Input for new vaccination
             Row(verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(
-                    value = newVaccinationDate,
-                    onValueChange = { newVaccinationDate = it },
-                    label = { Text("New Vaccination Date") },
-                    modifier = Modifier.weight(1f)
-                )
+                OutlinedTextField(value = newVaccinationDate, onValueChange = { newVaccinationDate = it }, label = { Text("New Vaccination Date") }, modifier = Modifier.weight(1f))
                 IconButton(onClick = {
                     if (newVaccinationDate.isNotBlank()) {
                         vaccinations.add(VaccinationRecord(date = newVaccinationDate))
-                        // Sort to keep most recent on top
                         vaccinations.sortByDescending { it.date }
-                        newVaccinationDate = "" // Clear input
+                        newVaccinationDate = ""
                     }
                 }) {
                     Icon(Icons.Default.Add, contentDescription = "Add vaccination")
@@ -123,10 +109,8 @@ fun RegistrationFormScreen(
             Divider(modifier = Modifier.padding(top = 8.dp))
         }
 
-        // --- Optional Microchip ---
         item { OutlinedTextField(value = microchipNumber, onValueChange = { microchipNumber = it }, label = { Text("Microchip Number (optional)") }, modifier = Modifier.fillMaxWidth()) }
 
-        // --- Submit Button ---
         item {
             Button(
                 onClick = {
@@ -153,13 +137,12 @@ fun RegistrationFormScreen(
     }
 }
 
-// Helper composable for DogType dropdown
+// Dropdown helpers unchanged (same code as before)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DogTypeDropdown(selected: DogType, onSelected: (DogType) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     val options = DogType.values()
-
     ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
         OutlinedTextField(
             value = selected.displayName,
@@ -180,7 +163,6 @@ fun DogTypeDropdown(selected: DogType, onSelected: (DogType) -> Unit) {
     }
 }
 
-// Helper composables for Gender and Color dropdowns (can reuse from previous step if you have them)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GenderDropdown(selected: DogGender, onSelected: (DogGender) -> Unit) {
@@ -194,9 +176,7 @@ fun GenderDropdown(selected: DogGender, onSelected: (DogGender) -> Unit) {
             modifier = Modifier.menuAnchor().fillMaxWidth()
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            options.forEach { gender ->
-                DropdownMenuItem(text = { Text(gender.name) }, onClick = { onSelected(gender); expanded = false })
-            }
+            options.forEach { gender -> DropdownMenuItem(text = { Text(gender.name) }, onClick = { onSelected(gender); expanded = false }) }
         }
     }
 }
@@ -214,9 +194,7 @@ fun ColorDropdown(label: String, selected: DogColor, onSelected: (DogColor) -> U
             modifier = Modifier.menuAnchor().fillMaxWidth()
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            options.forEach { color ->
-                DropdownMenuItem(text = { Text(color.displayName) }, onClick = { onSelected(color); expanded = false })
-            }
+            options.forEach { color -> DropdownMenuItem(text = { Text(color.displayName) }, onClick = { onSelected(color); expanded = false }) }
         }
     }
 }

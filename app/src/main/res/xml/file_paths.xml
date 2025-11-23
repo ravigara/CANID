@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Allow access to files inside the app's external files and cache directories -->
+    <external-files-path name="images" path="Pictures/" />
+    <external-cache-path  name="camera_cache" path="." />
+    <!-- If your ML model or photos are stored in internal app files -->
+    <files-path          name="internal_files" path="." />
+    <external-path name="external_files" path="." />
+</paths>

@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.util.UUID
 
-// Enums (DogType, DogGender, DogColor) are unchanged...
+// Enums
 enum class DogType(val displayName: String) {
     PET("Pet"),
     STREET("Street Dog"),
@@ -18,22 +18,27 @@ enum class DogColor(val displayName: String) {
     BLACK("Black"),
     WHITE("White"),
     BROWN("Brown"),
-    GOLDEN("Golden"),
-    CREAM("Cream"),
-    GREY("Grey"),
-    RED("Red")
+    MIXED("Mixed"),
+    GOLDEN("Golden")
 }
 
-// VaccinationRecord is unchanged...
+// Vaccination record
 data class VaccinationRecord(
     val date: String,
     val id: UUID = UUID.randomUUID()
 )
 
-// --- THIS IS THE UPDATED PART ---
-@Entity(tableName = "dog_profiles") // Tell Room this is a database table
+/**
+ * DogProfile entity stored in Room.
+ *
+ * NOTE:
+ * - We add `createdAt: Long` (timestamp) because many UI files expect it.
+ * - We add `storageUri: String?` as the old name many screens used (alias to imageUri).
+ * - Keep `imageUri` for the new code that uses it.
+ */
+@Entity(tableName = "dog_profiles")
 data class DogProfile(
-    @PrimaryKey(autoGenerate = true) // Add an auto-generating ID for the database
+    @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
 
     val dogName: String = "",
@@ -48,15 +53,23 @@ data class DogProfile(
     val vaccinations: List<VaccinationRecord> = emptyList(),
     val microchipNumber: String? = null,
 
-    // Add the field to store the "fingerprint"
+    // New persistent fields:
+    // stable URI string (new name)
+    val imageUri: String? = null,
+
+    // keep the old name used across UI files to avoid large refactors
+    val storageUri: String? = null,
+
+    // keep createdAt timestamp (milliseconds since epoch) since UI expects this
+    val createdAt: Long = System.currentTimeMillis(),
+
+    // the embedding vector for identification
     val embedding: FloatArray? = null
 ) {
-    // Add equals/hashCode for FloatArray, which is good practice for Room entities
+    // Provide equals/hashCode where FloatArray uses contentEquals/contentHashCode
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as DogProfile
+        if (other !is DogProfile) return false
 
         if (id != other.id) return false
         if (dogName != other.dogName) return false
@@ -70,10 +83,16 @@ data class DogProfile(
         if (adoptionDate != other.adoptionDate) return false
         if (vaccinations != other.vaccinations) return false
         if (microchipNumber != other.microchipNumber) return false
-        if (embedding != null) {
-            if (other.embedding == null) return false
+        if (imageUri != other.imageUri) return false
+        if (storageUri != other.storageUri) return false
+        if (createdAt != other.createdAt) return false
+
+        // For arrays, use contentEquals
+        if (embedding == null && other.embedding != null) return false
+        if (embedding != null && other.embedding == null) return false
+        if (embedding != null && other.embedding != null) {
             if (!embedding.contentEquals(other.embedding)) return false
-        } else if (other.embedding != null) return false
+        }
 
         return true
     }
@@ -91,6 +110,9 @@ data class DogProfile(
         result = 31 * result + (adoptionDate?.hashCode() ?: 0)
         result = 31 * result + vaccinations.hashCode()
         result = 31 * result + (microchipNumber?.hashCode() ?: 0)
+        result = 31 * result + (imageUri?.hashCode() ?: 0)
+        result = 31 * result + (storageUri?.hashCode() ?: 0)
+        result = 31 * result + createdAt.hashCode()
         result = 31 * result + (embedding?.contentHashCode() ?: 0)
         return result
     }
